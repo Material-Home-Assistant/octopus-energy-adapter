@@ -1,0 +1,27 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configurazione Sensori",
+        "description": "Seleziona i sensori Octopus per la lettura dell'energia.",
+        "data": {
+          "data_sensor": "Sensore Data Ultima Lettura",
+          "value_sensor": "Sensore Valore Ultima Lettura (kWh)",
+          "price_type": "Tipo di Tariffa"
+        }
+      },
+      "price": {
+        "title": "Configurazione Prezzo",
+        "description": "Configura il valore o il sensore per il calcolo dei costi.",
+        "data": {
+          "fixed_price": "Prezzo Fisso (EUR/kWh)",
+          "price_sensor": "Sensore Prezzo Attuale"
+        }
+      }
+    },
+    "error": {
+      "missing_fixed_price": "Inserisci un valore per il prezzo fisso.",
+      "missing_price_sensor": "Seleziona un sensore per il prezzo dinamico."
+    }
+  }
+}
