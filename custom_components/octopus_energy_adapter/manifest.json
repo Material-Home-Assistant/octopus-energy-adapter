@@ -1,10 +1,11 @@
 {
   "domain": "octopus_energy_adapter",
   "name": "Octopus Energy Adapter",
-  "version": "1.0.0",
-  "documentation": "https://github.com/tuo-repo",
-  "dependencies": ["recorder"],
-  "codeowners": [],
+  "version": "1.0.1",
+  "documentation": "https://github.com/HA-Material-Components/octopus-energy-adapter",
+  "issue_tracker": "https://github.com/HA-Material-Components/octopus-energy-adapter/issues",
+  "codeowners": ["@giovannilamarmora"],
   "iot_class": "local_polling",
-  "config_flow": true
+  "config_flow": true,
+  "render_readme": true
 }
