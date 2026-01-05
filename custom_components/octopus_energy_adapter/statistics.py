@@ -52,11 +52,13 @@ async def push_bulk_statistics(hass, data_dict, price):
 
         energy_stats.append({
             "start": start_time,
+            "last_reset": None,
             "sum": cumulative_energy
         })
         
         cost_stats.append({
             "start": start_time,
+            "last_reset": None,
             "sum": cumulative_cost
         })
 
