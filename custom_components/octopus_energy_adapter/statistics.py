@@ -18,7 +18,7 @@ async def push_bulk_statistics(hass, data_dict, price):
     energy_metadata = {
         "has_mean": False,
         "has_sum": True,
-        "name": "Octopus Energy Total",
+        "name": "Octopus Energy Statistics",
         "source": "sensor",
         "statistic_id": energy_id,
         "unit_of_measurement": "kWh",
@@ -28,7 +28,7 @@ async def push_bulk_statistics(hass, data_dict, price):
     cost_metadata = {
         "has_mean": False,
         "has_sum": True,
-        "name": "Octopus Energy Cost Total",
+        "name": "Octopus Energy Cost Statistics",
         "source": "sensor",
         "statistic_id": cost_id,
         "unit_of_measurement": "EUR",
