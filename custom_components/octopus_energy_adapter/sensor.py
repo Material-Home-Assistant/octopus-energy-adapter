@@ -144,7 +144,7 @@ class OctopusMonthlyEnergy(SensorEntity):
         return 0.0
 
 class OctopusMonthlyCost(SensorEntity):
-    """Sensor that calculates monthly cost based on the monthly energy sensor."""
+    """Sensore per il costo mensile basato sul consumo calcolato."""
 
     def __init__(self, hass, config, entry_id):
         self.hass = hass
@@ -161,14 +161,25 @@ class OctopusMonthlyCost(SensorEntity):
         return self._state
 
     async def async_added_to_hass(self):
+        """Si mette in ascolto del sensore energia per aggiornarsi in tempo reale."""
+        energy_entity_id = f"sensor.octopus_monthly_energy_{self._config.get(DOMAIN)}"
+        
+        # 1. Prova un primo aggiornamento immediato
+        await self.async_update()
+        
+        # 2. Ogni volta che l'energia cambia, ricalcola il costo
+        self.async_on_remove(
+            async_track_state_change_event(self.hass, [energy_entity_id], self._async_on_energy_update)
+        )
+
+    async def _async_on_energy_update(self, event):
+        """Callback chiamata quando cambia il sensore energia."""
         await self.async_update()
         self.async_write_ha_state()
 
     async def async_update(self):
-        """Moltiplica il consumo mensile attuale per il prezzo corrente."""
+        """Logica di calcolo del costo."""
         try:
-            energy_val = 0
-            # Ottiene lo stato del sensore energia mensile appena calcolato
             energy_entity_id = f"sensor.octopus_monthly_energy_{self._config.get(DOMAIN)}"
             energy_state = self.hass.states.get(energy_entity_id)
             
@@ -176,11 +187,20 @@ class OctopusMonthlyCost(SensorEntity):
                 energy_val = float(energy_state.state)
                 price = await self._get_current_price()
                 self._state = round(energy_val * price, 2)
-        except Exception:
-            self._state = 0
+                _LOGGER.debug("Costo ricalcolato: %s EUR", self._state)
+            else:
+                # Se l'energia non è pronta, proviamo a guardare il JSON come backup
+                data = await self.hass.async_add_executor_job(load_data_sync, self.hass)
+                if data:
+                    # Usiamo la funzione di calcolo mensile (dovremmo renderla helper, 
+                    # ma per ora la simuliamo o aspettiamo il prossimo ciclo)
+                    pass
+        except Exception as e:
+            _LOGGER.error("Errore nel calcolo del costo: %s", e)
+            self._state = None
 
     async def _get_current_price(self):
-        """Recupera il prezzo configurato (duplicato per indipendenza)."""
+        """Recupera il prezzo (stessa logica del sensore energia)."""
         if self._config.get(CONF_PRICE_TYPE) == PRICE_TYPE_FIXED:
             return float(self._config.get(CONF_FIXED_PRICE, 0.0))
         price_sensor = self._config.get(CONF_PRICE_SENSOR)

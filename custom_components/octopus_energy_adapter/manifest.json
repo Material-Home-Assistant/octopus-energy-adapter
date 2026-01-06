@@ -1,7 +1,7 @@
 {
   "domain": "octopus_energy_adapter",
   "name": "Octopus Energy Adapter",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "documentation": "https://github.com/HA-Material-Components/octopus-energy-adapter",
   "issue_tracker": "https://github.com/HA-Material-Components/octopus-energy-adapter/issues",
   "codeowners": ["@giovannilamarmora"],
