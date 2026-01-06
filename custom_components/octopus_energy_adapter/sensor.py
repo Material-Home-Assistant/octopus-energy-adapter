@@ -7,6 +7,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.helpers.event import async_track_state_change_event
+from homeassistant.helpers.dispatcher import async_dispatcher_connect, async_dispatcher_send
 
 from .const import (
     DOMAIN,
@@ -22,16 +23,20 @@ from .statistics import push_statistics, push_bulk_statistics
 
 _LOGGER = logging.getLogger(__name__)
 
+# Segnale per far parlare i due sensori
+SIGNAL_ENERGY_UPDATE = f"{DOMAIN}_energy_updated"
+
 async def async_setup_entry(hass, entry, async_add_entities):
     """Setup sensors from a config entry."""
     config = entry.data
-    async_add_entities([
-        OctopusMonthlyEnergy(hass, config, entry.entry_id),
-        OctopusMonthlyCost(hass, config, entry.entry_id)
-    ], True)
+    
+    energy_sensor = OctopusMonthlyEnergy(hass, config, entry.entry_id)
+    cost_sensor = OctopusMonthlyCost(hass, config, entry.entry_id)
+    
+    async_add_entities([energy_sensor, cost_sensor], True)
 
 class OctopusMonthlyEnergy(SensorEntity):
-    """Sensor that calculates monthly consumption internally based on JSON."""
+    """Sensore Energia: Legge il JSON e calcola il mensile."""
 
     def __init__(self, hass, config, entry_id):
         self.hass = hass
@@ -41,22 +46,21 @@ class OctopusMonthlyEnergy(SensorEntity):
         self._attr_device_class = SensorDeviceClass.ENERGY
         self._attr_state_class = SensorStateClass.TOTAL
         self._attr_native_unit_of_measurement = "kWh"
-        self._state = None
+        self._state = 0.0
 
     @property
     def native_value(self):
         return self._state
 
     async def async_added_to_hass(self):
-        """Inizializzazione e calcolo del valore mensile al riavvio."""
+        """Inizializzazione al boot."""
         data = await self.hass.async_add_executor_job(load_data_sync, self.hass)
-        
         if data:
             self._state = self._calculate_monthly_value(data)
             price = await self._get_current_price()
             self.hass.async_create_task(push_bulk_statistics(self.hass, data, price))
-        else:
-            self._state = 0
+            # Avvisa il sensore costo che abbiamo un valore iniziale
+            async_dispatcher_send(self.hass, SIGNAL_ENERGY_UPDATE, self._state)
 
         data_src = self._config.get(CONF_DATA_SENSOR)
         value_src = self._config.get(CONF_VALUE_SENSOR)
@@ -65,86 +69,64 @@ class OctopusMonthlyEnergy(SensorEntity):
         )
 
     def _calculate_monthly_value(self, data):
-        """Calcola il consumo relativo al mese solare corrente."""
-        if not data:
-            return 0
-        
+        if not data: return 0.0
         sorted_dates = sorted(data.keys())
         last_total = data[sorted_dates[-1]]
-        
-        # Primo giorno del mese corrente (es. 2026-01-01)
         first_of_month = datetime.now().replace(day=1).strftime("%Y-%m-%d")
-        
-        # Cerca l'ultimo valore disponibile prima di questo mese
-        base_value = 0
+        base_value = 0.0
         for d in reversed(sorted_dates):
             if d < first_of_month:
                 base_value = data[d]
                 break
-        
         return round(last_total - base_value, 3)
 
     async def _async_on_dependency_update(self, event):
-        """Callback per l'aggiornamento quando i sensori Octopus cambiano."""
         await self.async_update()
         self.async_write_ha_state()
+        # Notifica il sensore costo dell'avvenuto aggiornamento
+        async_dispatcher_send(self.hass, SIGNAL_ENERGY_UPDATE, self._state)
 
     async def async_update(self):
-        """Aggiornamento dati: il JSON è l'unica fonte di verità."""
         try:
             data_src = self._config.get(CONF_DATA_SENSOR)
             value_src = self._config.get(CONF_VALUE_SENSOR)
-            
-            date_state = self.hass.states.get(data_src)
-            value_state = self.hass.states.get(value_src)
+            d_st = self.hass.states.get(data_src)
+            v_st = self.hass.states.get(value_src)
 
-            if not date_state or not value_state or date_state.state in ["unknown", "unavailable"]:
+            if not d_st or not v_st or d_st.state in ["unknown", "unavailable"]:
                 return
 
-            reading_date = datetime.strptime(date_state.state, "%d/%m/%Y").strftime("%Y-%m-%d")
-            daily_value = float(value_state.state)
-
-            # Carica il file JSON
+            reading_date = datetime.strptime(d_st.state, "%d/%m/%Y").strftime("%Y-%m-%d")
+            daily_val = float(v_st.state)
             data = await self.hass.async_add_executor_job(load_data_sync, self.hass)
 
             if not has_date(data, reading_date):
-                # Recupera l'ultimo totale direttamente dal JSON invece che dal database
-                last_cum_total = 0
+                last_cum = 0.0
                 if data:
-                    sorted_dates = sorted(data.keys())
-                    last_cum_total = data[sorted_dates[-1]]
+                    last_cum = data[sorted(data.keys())[-1]]
                 
-                # Calcola il nuovo totale cumulativo
-                new_cum_total = round(last_cum_total + daily_value, 3)
-
-                # Salva nel file JSON
-                add_day(data, reading_date, new_cum_total)
+                new_cum = round(last_cum + daily_val, 3)
+                add_day(data, reading_date, new_cum)
                 await self.hass.async_add_executor_job(save_data_sync, self.hass, data)
 
-                # Invia alle statistiche esterne (:)
                 price = await self._get_current_price()
-                await push_statistics(self.hass, reading_date, new_cum_total, price)
-                
-                # Ricalcola lo stato del sensore mensile per la dashboard
+                await push_statistics(self.hass, reading_date, new_cum, price)
                 self._state = self._calculate_monthly_value(data)
-                _LOGGER.info("Octopus: Added %s kWh. New cumulative: %s", daily_value, new_cum_total)
-
         except Exception as e:
-            _LOGGER.error("Error updating Octopus Monthly Energy: %s", e)
+            _LOGGER.error("Errore Energia: %s", e)
 
     async def _get_current_price(self):
-        """Recupera il prezzo configurato."""
         if self._config.get(CONF_PRICE_TYPE) == PRICE_TYPE_FIXED:
             return float(self._config.get(CONF_FIXED_PRICE, 0.0))
-        price_sensor = self._config.get(CONF_PRICE_SENSOR)
-        if price_sensor:
-            state = self.hass.states.get(price_sensor)
-            if state and state.state not in ["unknown", "unavailable"]:
-                return float(state.state)
+        p_src = self._config.get(CONF_PRICE_SENSOR)
+        if p_src:
+            st = self.hass.states.get(p_src)
+            if st and st.state not in ["unknown", "unavailable"]:
+                return float(st.state)
         return 0.0
 
 class OctopusMonthlyCost(SensorEntity):
-    """Sensore per il costo mensile basato sul consumo calcolato."""
+    """Sensore Costo: Reagisce ai segnali del sensore Energia."""
 
     def __init__(self, hass, config, entry_id):
         self.hass = hass
@@ -154,58 +136,44 @@ class OctopusMonthlyCost(SensorEntity):
         self._attr_device_class = SensorDeviceClass.MONETARY
         self._attr_state_class = SensorStateClass.TOTAL
         self._attr_native_unit_of_measurement = "EUR"
-        self._state = None
+        self._state = 0.0
 
     @property
     def native_value(self):
         return self._state
 
     async def async_added_to_hass(self):
-        """Si mette in ascolto del sensore energia per aggiornarsi in tempo reale."""
-        energy_entity_id = f"sensor.octopus_monthly_energy_{self._config.get(DOMAIN)}"
-        
-        # 1. Prova un primo aggiornamento immediato
-        await self.async_update()
-        
-        # 2. Ogni volta che l'energia cambia, ricalcola il costo
+        """Si collega al segnale di aggiornamento dell'energia."""
         self.async_on_remove(
-            async_track_state_change_event(self.hass, [energy_entity_id], self._async_on_energy_update)
+            async_dispatcher_connect(self.hass, SIGNAL_ENERGY_UPDATE, self._update_cost)
         )
+        # Forza un ricalcolo immediato se ci sono dati nel JSON
+        data = await self.hass.async_add_executor_job(load_data_sync, self.hass)
+        if data:
+            # Calcolo manuale al boot per non restare su 'unknown'
+            sorted_dates = sorted(data.keys())
+            last_total = data[sorted_dates[-1]]
+            first_of_month = datetime.now().replace(day=1).strftime("%Y-%m-%d")
+            base = 0.0
+            for d in reversed(sorted_dates):
+                if d < first_of_month:
+                    base = data[d]
+                    break
+            energy_val = round(last_total - base, 3)
+            await self._update_cost(energy_val)
 
-    async def _async_on_energy_update(self, event):
-        """Callback chiamata quando cambia il sensore energia."""
-        await self.async_update()
+    async def _update_cost(self, energy_val):
+        """Riceve il valore di energia e calcola il costo."""
+        price = await self._get_current_price()
+        self._state = round(energy_val * price, 2)
         self.async_write_ha_state()
 
-    async def async_update(self):
-        """Logica di calcolo del costo."""
-        try:
-            energy_entity_id = f"sensor.octopus_monthly_energy_{self._config.get(DOMAIN)}"
-            energy_state = self.hass.states.get(energy_entity_id)
-            
-            if energy_state and energy_state.state not in ["unknown", "unavailable"]:
-                energy_val = float(energy_state.state)
-                price = await self._get_current_price()
-                self._state = round(energy_val * price, 2)
-                _LOGGER.debug("Costo ricalcolato: %s EUR", self._state)
-            else:
-                # Se l'energia non è pronta, proviamo a guardare il JSON come backup
-                data = await self.hass.async_add_executor_job(load_data_sync, self.hass)
-                if data:
-                    # Usiamo la funzione di calcolo mensile (dovremmo renderla helper, 
-                    # ma per ora la simuliamo o aspettiamo il prossimo ciclo)
-                    pass
-        except Exception as e:
-            _LOGGER.error("Errore nel calcolo del costo: %s", e)
-            self._state = None
-
     async def _get_current_price(self):
-        """Recupera il prezzo (stessa logica del sensore energia)."""
         if self._config.get(CONF_PRICE_TYPE) == PRICE_TYPE_FIXED:
             return float(self._config.get(CONF_FIXED_PRICE, 0.0))
-        price_sensor = self._config.get(CONF_PRICE_SENSOR)
-        if price_sensor:
-            state = self.hass.states.get(price_sensor)
-            if state and state.state not in ["unknown", "unavailable"]:
-                return float(state.state)
+        p_src = self._config.get(CONF_PRICE_SENSOR)
+        if p_src:
+            st = self.hass.states.get(p_src)
+            if st and st.state not in ["unknown", "unavailable"]:
+                return float(st.state)
         return 0.0
