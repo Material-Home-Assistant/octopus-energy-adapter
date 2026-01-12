@@ -1,7 +1,7 @@
 # Octopus Energy Adapter for Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
-![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)
+![Version](https://img.shields.io/badge/version-1.0.4-blue.svg)
 ![Home Assistant](https://img.shields.io/badge/Home--Assistant-2025.1.0%2B-blueviolet.svg)
 
 Questo adapter personalizzato permette di integrare i consumi storici di **Octopus Energy** direttamente nel **Pannello Energia** di Home Assistant, risolvendo il problema del ritardo nella ricezione dei dati.
@@ -43,8 +43,8 @@ Questo file permette all'integrazione di mantenere la coerenza dei dati anche in
 Per popolare i grafici:
 
 1. Vai nella dashboard **Energia** -> **Configurazione**.
-2. Aggiungi `Octopus Energy Total` sotto **Consumo di rete**.
-3. Associa `Octopus Energy Cost Total` per il monitoraggio dei costi.
+2. Aggiungi `Octopus Total Energy` sotto **Consumo di rete**.
+3. Associa `Octopus Total Cost` per il monitoraggio dei costi.
 
 ## 🛠 Troubleshooting
 
