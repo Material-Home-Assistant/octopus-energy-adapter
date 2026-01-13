@@ -2,26 +2,35 @@
   "config": {
     "step": {
       "user": {
-        "title": "Configurazione Sensori",
-        "description": "Seleziona i sensori Octopus per la lettura dell'energia.",
+        "title": "Configurazione Elettricità Octopus",
+        "description": "Configura il monitoraggio dei consumi elettrici. Seleziona i sensori che forniscono i dati dell'ultima lettura e scegli come calcolare il costo (fisso o dinamico).\n\n**Nota:** Se scegli la tariffa fissa, inserisci il valore nel campo corrispondente; se scegli il sensore dinamico, seleziona l'entità che fornisce il prezzo aggiornato.",
         "data": {
-          "data_sensor": "Sensore Data Ultima Lettura",
-          "value_sensor": "Sensore Valore Ultima Lettura (kWh)",
-          "price_type": "Tipo di Tariffa"
-        }
-      },
-      "price": {
-        "title": "Configurazione Prezzo",
-        "description": "Configura il valore o il sensore per il calcolo dei costi.",
-        "data": {
-          "fixed_price": "Prezzo Fisso (EUR/kWh)",
-          "price_sensor": "Sensore Prezzo Attuale"
+          "data_sensor": "Sensore data ultima lettura elettricità",
+          "value_sensor": "Sensore consumo elettrico totale (kWh)",
+          "price_type": "Modalità di tariffazione elettrica",
+          "fixed_price": "Costo fisso per kWh (es. 0.125)",
+          "price_sensor": "Sensore per il prezzo variabile attuale"
         }
       }
     },
     "error": {
-      "missing_fixed_price": "Inserisci un valore per il prezzo fisso.",
-      "missing_price_sensor": "Seleziona un sensore per il prezzo dinamico."
+      "missing_fixed_price": "È necessario inserire un valore numerico per il prezzo fisso.",
+      "missing_price_sensor": "Seleziona un sensore di prezzo per la tariffa dinamica."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Impostazioni Elettricità",
+        "description": "Modifica i parametri per il calcolo dei costi elettrici. Puoi aggiornare i sensori di lettura o cambiare la struttura del prezzo (Fisso/Dinamico).",
+        "data": {
+          "data_sensor": "Sensore data lettura",
+          "value_sensor": "Sensore consumo (kWh)",
+          "price_type": "Tipo di tariffa",
+          "fixed_price": "Prezzo fisso (€/kWh)",
+          "price_sensor": "Sensore prezzo dinamico"
+        }
+      }
     }
   }
 }
