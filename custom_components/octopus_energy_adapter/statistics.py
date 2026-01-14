@@ -20,7 +20,7 @@ async def push_statistics(hass, date_str, cumulative_value, price):
 async def push_bulk_statistics(hass, data_dict, price):
     """
     Invia un set massivo di dati statistici. 
-    Utile al primo avvio per caricare tutto lo storico contenuto nel file JSON.
+    Include una protezione per evitare l'invio di dati corrotti (valori negativi).
     """
     # Identificativi univoci per le statistiche esterne. 
     # NOTA: Iniziano con 'sensor:' per essere riconosciuti dal pannello Energia.
@@ -55,37 +55,42 @@ async def push_bulk_statistics(hass, data_dict, price):
     sorted_dates = sorted(data_dict.keys())
 
     for date_str in sorted_dates:
-        # Conversione dei dati in formati numerici corretti (float)
-        cumulative_energy = round(float(data_dict[date_str]), 3)
-        # Calcoliamo il costo totale accumulato fino a quel giorno usando il prezzo fornito.
-        cumulative_cost = round(cumulative_energy * float(price), 2)
-        
-        # IMPORTANTE: Home Assistant accetta statistiche esterne solo se associate 
-        # a un timestamp preciso (di solito l'inizio dell'ora o del giorno).
-        # Qui impostiamo la mezzanotte locale (00:00:00).
-        dt_local = datetime.strptime(date_str, "%Y-%m-%d").replace(
-            hour=0, minute=0, second=0, microsecond=0
-        )
-        # Convertiamo la mezzanotte locale in UTC, come richiesto dal database interno di HA.
-        start_time = as_utc(dt_local)
+        try:
+            # Conversione e arrotondamento
+            cumulative_energy = round(float(data_dict[date_str]), 3)
+            
+            # --- PATCH DI SICUREZZA ---
+            # Se per qualche motivo il dato nel JSON è negativo, lo saltiamo completamente.
+            # Questo impedisce di "sporcare" i grafici del pannello Energia.
+            if cumulative_energy < 0:
+                _LOGGER.error(f"Statistica scartata per valore negativo: {cumulative_energy} il {date_str}")
+                continue
+            # --------------------------
 
-        # Creiamo il pacchetto dati per l'energia
-        energy_stats.append({
-            "start": start_time,
-            "last_reset": None, # Non resettiamo mai il contatore (è un totale assoluto)
-            "sum": cumulative_energy # Il valore cumulativo totale
-        })
-        
-        # Creiamo il pacchetto dati per il costo
-        cost_stats.append({
-            "start": start_time,
-            "last_reset": None,
-            "sum": cumulative_cost
-        })
+            cumulative_cost = round(cumulative_energy * float(price), 2)
+            
+            dt_local = datetime.strptime(date_str, "%Y-%m-%d").replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+            start_time = as_utc(dt_local)
 
+            energy_stats.append({
+                "start": start_time,
+                "last_reset": None,
+                "sum": cumulative_energy
+            })
+            
+            cost_stats.append({
+                "start": start_time,
+                "last_reset": None,
+                "sum": cumulative_cost
+            })
+        except (ValueError, TypeError) as e:
+            _LOGGER.warning(f"Errore formato dati per data {date_str}: {e}")
+            continue
     # Se abbiamo accumulato dei dati, li iniettiamo nel database del Recorder.
     if energy_stats:
-        _LOGGER.info(f"Inviate statistiche energia a {energy_id} (prezzo applicato: {price})")
+        _LOGGER.info(f"Inviate statistiche energia a {energy_id}")
         # Questa funzione scrive direttamente nel database di Home Assistant
         async_add_external_statistics(hass, energy_metadata, energy_stats)
         

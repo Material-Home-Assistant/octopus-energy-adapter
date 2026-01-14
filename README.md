@@ -1,7 +1,7 @@
 # Octopus Energy Adapter for Home Assistant
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
-![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.1.1-blue.svg)
 ![Home Assistant](https://img.shields.io/badge/Home--Assistant-2025.1.0%2B-blueviolet.svg)
 
 Questo adapter personalizzato permette di integrare i consumi storici di **Octopus Energy** direttamente nel **Pannello Energia** di Home Assistant, risolvendo il problema del ritardo nella ricezione dei dati.

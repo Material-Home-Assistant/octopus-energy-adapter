@@ -78,7 +78,7 @@ class OctopusBaseEntity(SensorEntity):
             "name": "Octopus Monitor Elettricità",
             "manufacturer": "Octopus Adapter",
             "model": "Calcolatore Costi Mensili",
-            "sw_version": "1.1.0", # Versione utile per il debug e la gestione del parco dispositivi
+            "sw_version": "1.1.1", # Versione utile per il debug e la gestione del parco dispositivi
             "hw_version": "Software",
             "entry_type": "service", # Indica che non è un hardware fisico ma un servizio virtuale
         }
@@ -134,7 +134,10 @@ class OctopusCurrentPrice(OctopusBaseEntity):
             st = self.hass.states.get(p_src)
             # Verifica che il sensore esista e abbia un valore valido (non 'unavailable')
             if st and st.state not in ["unknown", "unavailable"]:
-                return float(st.state)
+                try:
+                    return float(st.state)
+                except ValueError:
+                    return 0.0
         return 0.0
 
 class OctopusMonthlyEnergy(OctopusBaseEntity):
@@ -205,16 +208,33 @@ class OctopusMonthlyEnergy(OctopusBaseEntity):
         async_dispatcher_send(self.hass, SIGNAL_ENERGY_UPDATE, self._state)
 
     async def async_update(self):
-        """Logica principale di salvataggio dati giornalieri."""
+        """Logica principale di salvataggio dati giornalieri con protezione spike."""
         try:
             d_st = self.hass.states.get(self._config.get(CONF_DATA_SENSOR))
             v_st = self.hass.states.get(self._config.get(CONF_VALUE_SENSOR))
-            if not d_st or not v_st or d_st.state in ["unknown", "unavailable"]: return
+            
+            if not d_st or not v_st or d_st.state in ["unknown", "unavailable"]: 
+                return
 
             # Trasforma il formato data da quello del sensore (DD/MM/YYYY) a quello ISO (YYYY-MM-DD) per il JSON.
             reading_date = datetime.strptime(d_st.state, "%d/%m/%Y").strftime("%Y-%m-%d")
-            daily_val = float(v_st.state)
             
+            try:
+                daily_val = float(v_st.state)
+            except ValueError:
+                return
+
+            # --- INIZIO PATCH VALIDAZIONE (v1.1.1) ---
+            # Protezione contro letture sporche dell'integrazione Octopus
+            if daily_val < 0:
+                _LOGGER.warning(f"Scartata lettura negativa anomala: {daily_val} il {reading_date}. Verificare sensore sorgente.")
+                return
+
+            if daily_val > 150: # Limite di sicurezza: scarta letture sopra i 150kWh in un solo giorno
+                _LOGGER.error(f"Scartata lettura sospetta troppo alta: {daily_val} kWh il {reading_date}.")
+                return
+            # --- FINE PATCH VALIDAZIONE ---
+
             # Operazione I/O: Carica JSON. Usiamo executor_job per non bloccare l'interfaccia.
             data = await self.hass.async_add_executor_job(load_data_sync, self.hass)
 
@@ -222,6 +242,7 @@ class OctopusMonthlyEnergy(OctopusBaseEntity):
             if not has_date(data, reading_date):
                 # Recupera l'ultimo totale cumulativo salvato.
                 last_cum = data[sorted(data.keys())[-1]] if data else 0.0
+                
                 # Calcola il nuovo totale cumulativo sommando il consumo odierno all'ultimo totale.
                 new_cum = round(last_cum + daily_val, 3)
                 
@@ -235,6 +256,7 @@ class OctopusMonthlyEnergy(OctopusBaseEntity):
                 
                 # Ricalcola lo stato del sensore per riflettere il nuovo valore mensile.
                 self._state = self._calculate_monthly_value(data)
+                
         except Exception as e:
             _LOGGER.error("Errore durante l'aggiornamento dei dati energia: %s", e)
 
@@ -246,7 +268,10 @@ class OctopusMonthlyEnergy(OctopusBaseEntity):
         if p_src:
             st = self.hass.states.get(p_src)
             if st and st.state not in ["unknown", "unavailable"]:
-                return float(st.state)
+                try:
+                    return float(st.state)
+                except ValueError:
+                    return 0.0
         return 0.0
 
 class OctopusMonthlyCost(OctopusBaseEntity):
@@ -329,5 +354,8 @@ class OctopusMonthlyCost(OctopusBaseEntity):
         if p_src:
             st = self.hass.states.get(p_src)
             if st and st.state not in ["unknown", "unavailable"]:
-                return float(st.state)
+                try:
+                    return float(st.state)
+                except ValueError:
+                    return 0.0
         return 0.0
