@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: 💬 Discuti una nuova funzionalità
-    url: https://github.com/HA-Material-Components/octopus-energy-adapter/discussions
+    url: https://github.com/HA-Material-Components/octopus-energy-adapter/discussions/new?category=ideas
     about: Preferisci discutere un'idea prima di aprire una issue formale? Clicca qui.
   - name: 🐙 Integrazione Originale (Octopus Energy IT)
     url: https://github.com/samuelebistoletti/HomeAssistant-OctopusEnergyIT
