@@ -7,5 +7,7 @@
   "codeowners": ["@giovannilamarmora"],
   "iot_class": "cloud_polling",
   "config_flow": true,
-  "render_readme": true
+  "dependencies": [
+    "recorder"
+  ]
 }
