@@ -14,6 +14,24 @@ Questo adapter risolve il problema del ritardo nella ricezione dei dati, permett
 
 ---
 
+## 💡 Perché questo progetto?
+
+Questa integrazione nasce per colmare una lacuna tecnica dei componenti esistenti.
+
+### 🚧 Il Limite Attuale
+L'integrazione standard per [Octopus Energy IT](https://github.com/samuelebistoletti/HomeAssistant-OctopusEnergyIT) (di Samuele Bistoletti) espone solo il dato del consumo giornaliero con un ritardo di 2-3 giorni. Poiché non fornisce un sensore cumulativo (*totalizer*) e i dati arrivano posticipati, l'integrazione risulta incompatibile con il Pannello Energia nativo di Home Assistant, che richiede letture continue e incrementali.
+
+### ✅ La Nostra Soluzione
+Abbiamo creato un "ponte" intelligente che:
+
+1.  **Genera un totale cumulativo**: Prende i dati giornalieri ritardati e li somma in modo persistente in un file JSON locale.
+2.  **Compatibilità Pannello Energia**: Utilizza le *External Statistics* per iniettare i dati storici nel database di HA, permettendo finalmente di vedere i grafici di consumo e costo nel pannello ufficiale.
+3.  **Protezione Dati**: Include filtri avanzati (v1.1.1) per ignorare eventuali letture errate o negative provenienti dal cloud, garantendo grafici sempre puliti e accurati.
+
+> **In breve:** trasforma letture giornaliere frammentate in una statistica a lungo termine solida, coerente e perfettamente integrata in Home Assistant.
+
+---
+
 ## ✨ Caratteristiche Principali
 
 <div align="center">
