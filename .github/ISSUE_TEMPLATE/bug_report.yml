@@ -1,0 +1,47 @@
+name: 🐞 Segnalazione Bug
+description: Crea un report per aiutarci a migliorare l'integrazione
+title: "[Bug]: "
+labels: ["🐛 bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Grazie per aver dedicato del tempo a compilare questa segnalazione! 🙏
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 📝 Descrizione del problema
+      description: Descrivi cosa è successo e cosa ti aspettavi che accadesse.
+      placeholder: "Ho notato che..."
+    validations:
+      required: true
+
+  - type: input
+    id: ha_version
+    attributes:
+      label: 🏠 Versione Home Assistant
+      placeholder: "es. 2024.1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: integration_version
+    attributes:
+      label: 🐙 Versione Integrazione
+      placeholder: "es. 1.1.1"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 📜 Log ed Errori
+      description: Incolla qui eventuali log di errore (Impostazioni -> Sistema -> Log).
+      render: shell
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 📸 Screenshot
+      description: Se utile, incolla qui screenshot o immagini del problema.

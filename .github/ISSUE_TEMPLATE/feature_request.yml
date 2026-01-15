@@ -1,0 +1,30 @@
+name: 💡 Richiesta Funzionalità
+description: Suggerisci un'idea per questo progetto
+title: "[Feature]: "
+labels: ["✨ future feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Grazie per il tuo suggerimento! 🚀
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 📝 Descrizione della richiesta
+      description: Descrivi chiaramente la funzionalità che vorresti vedere.
+      placeholder: "Sarebbe utile se..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: use_case
+    attributes:
+      label: 💡 Caso d'uso
+      description: Spiega perché questa funzionalità sarebbe utile per te e per altri utenti.
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 📸 Mockup o Esempi
+      description: Se hai immagini, schizzi o esempi di altre integrazioni, incollali qui.
