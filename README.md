@@ -1,3 +1,7 @@
+<div align="center">
+<img src="https://raw.githubusercontent.com/HA-Material-Components/octopus-energy-adapter/main/logos/logo%402x.png" width="200px" alt="Octopus Energy Adapter Logo">
+</div>
+
 # 🐙 Octopus Energy Adapter for Home Assistant
 
 [![Buy me a coffee](https://img.buymeacoffee.com/button-api/?text=Buy%20me%20a%20coffee&emoji=%E2%98%95&slug=giovannilamarmora&button_colour=5F7FFF&font_colour=ffffff&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00)](https://www.buymeacoffee.com/giovannilamarmora)
