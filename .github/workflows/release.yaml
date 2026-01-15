@@ -18,11 +18,7 @@ jobs:
           zip -r ../../octopus_energy_adapter.zip .
 
       - name: 🚀 Upload Release Asset
-        uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./octopus_energy_adapter.zip
-          asset_name: octopus_energy_adapter.zip
-          asset_content_type: application/zip
+        run: |
+          gh release upload ${{ github.event.release.tag_name }} ./octopus_energy_adapter.zip
