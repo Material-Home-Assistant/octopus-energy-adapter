@@ -1,15 +1,11 @@
 {
   "domain": "octopus_energy_adapter",
   "name": "Octopus Energy Adapter",
-  "codeowners": [
-    "@giovannilamarmora"
-  ],
+  "codeowners": ["@giovannilamarmora"],
   "config_flow": true,
-  "dependencies": [
-    "recorder"
-  ],
+  "dependencies": ["recorder"],
   "documentation": "https://github.com/HA-Material-Components/octopus-energy-adapter",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/HA-Material-Components/octopus-energy-adapter/issues",
-  "version": "1.1.1"
+  "version": "1.1.2"
 }
