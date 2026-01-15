@@ -1,5 +1,5 @@
 <div align="center">
-<img src="https://raw.githubusercontent.com/HA-Material-Components/octopus-energy-adapter/main/logos/logo%402x.png" width="400px" alt="Octopus Energy Adapter Logo">
+<img src="https://raw.githubusercontent.com/HA-Material-Components/octopus-energy-adapter/main/logos/logo%402x.png" width="500px" alt="Octopus Energy Adapter Logo">
 </div>
 
 # 🐙 Octopus Energy Adapter for Home Assistant
