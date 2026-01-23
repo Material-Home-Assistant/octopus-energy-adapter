@@ -9,7 +9,7 @@
 [![Instagram](https://img.shields.io/badge/Instagram-%40gio_lamarmora-E4405F?style=for-the-badge&logo=instagram&logoColor=white)](https://www.instagram.com/gio_lamarmora/)&nbsp;&nbsp;[![WebSite](https://img.shields.io/badge/WebSite%20-Visit-blue?style=for-the-badge&logo=Google-Chrome&logoColor=white)](https://giovannilamarmora.github.io/)&nbsp;&nbsp;[![BuyMeACoffee](https://img.shields.io/badge/☕_Buy_me_a_coffee-Support-orange?style=for-the-badge&logo=buymeacoffee&logoColor=white)](https://www.buymeacoffee.com/giovannilamarmora)&nbsp;&nbsp;[![Sponsor](https://img.shields.io/badge/GitHub_Sponsors-Become_a_Sponsor-pink?style=for-the-badge&logo=githubsponsors&logoColor=white)](https://github.com/sponsors/giovannilamarmora)
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge&logo=hacs&logoColor=white)](https://github.com/hacs/integration)
-![Version](https://img.shields.io/badge/version-1.1.2-blue.svg?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.1.3-blue.svg?style=for-the-badge)
 ![Home Assistant](https://img.shields.io/badge/Home--Assistant-2025.1.0%2B-blueviolet.svg?style=for-the-badge&logo=home-assistant&logoColor=white)
 
 **Integra i consumi storici di Octopus Energy direttamente nel Pannello Energia di Home Assistant.**

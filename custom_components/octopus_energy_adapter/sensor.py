@@ -78,7 +78,7 @@ class OctopusBaseEntity(SensorEntity):
             "name": "Octopus Monitor Elettricità",
             "manufacturer": "Octopus Adapter",
             "model": "Calcolatore Costi Mensili",
-            "sw_version": "1.1.2", # Versione utile per il debug e la gestione del parco dispositivi
+            "sw_version": "1.1.3", # Versione utile per il debug e la gestione del parco dispositivi
             "hw_version": "Software",
             "entry_type": "service", # Indica che non è un hardware fisico ma un servizio virtuale
         }

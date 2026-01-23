@@ -92,10 +92,12 @@ class OctopusAdapterConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class OctopusOptionsFlowHandler(config_entries.OptionsFlow):
     """
     Gestisce la modifica di un'integrazione esistente.
-    Molto simile al ConfigFlow, ma lavora su dati già presenti.
     """
-    def __init__(self, config_entry):
-        self.config_entry = config_entry
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        """Inizializza il flusso delle opzioni."""
+        # Rimuoviamo self.config_entry = config_entry perché causa il crash
+        # Se serve riferirsi alla entry, si usa self.config_entry che è già ereditato
+        pass
 
     async def async_step_init(self, user_input=None):
         """
@@ -103,43 +105,43 @@ class OctopusOptionsFlowHandler(config_entries.OptionsFlow):
         """
         errors = {}
         
-        # Elaborazione dei dati modificati
+        # In OptionsFlow, l'oggetto entry è accessibile tramite self.config_entry
+        config_entry = self.config_entry
+
         if user_input is not None:
             price_type = user_input.get(CONF_PRICE_TYPE)
             
-            # Stessa logica di validazione del ConfigFlow per garantire coerenza
             if price_type == PRICE_TYPE_FIXED and not user_input.get(CONF_FIXED_PRICE):
                 errors["base"] = "missing_fixed_price"
             elif price_type == PRICE_TYPE_SENSOR and not user_input.get(CONF_PRICE_SENSOR):
                 errors["base"] = "missing_price_sensor"
 
             if not errors:
-                # Aggiorniamo la Config Entry esistente con i nuovi valori
-                self.hass.config_entries.async_update_entry(self.config_entry, data=user_input)
-                # Creiamo l'entry (HA ricaricherà automaticamente l'integrazione)
+                # Aggiorniamo i DATI della config entry (non le opzioni separate)
+                # NOTA: async_update_entry ricaricherà l'integrazione automaticamente
+                self.hass.config_entries.async_update_entry(config_entry, data=user_input)
                 return self.async_create_entry(title="", data=user_input)
 
-        # Recuperiamo i dati attuali per mostrarli come valori predefiniti (default) nel form
-        data = self.config_entry.data
+        # Recuperiamo i dati attuali dai dati della entry
+        current_data = config_entry.data
         
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema({
-                # vol.Required con default preso dai dati attuali: permette di non dover reinserire tutto
-                vol.Required(CONF_DATA_SENSOR, default=data.get(CONF_DATA_SENSOR, "")): selector.EntitySelector(
+                vol.Required(CONF_DATA_SENSOR, default=current_data.get(CONF_DATA_SENSOR, "")): selector.EntitySelector(
                     selector.EntitySelectorConfig(domain="sensor")
                 ),
-                vol.Required(CONF_VALUE_SENSOR, default=data.get(CONF_VALUE_SENSOR, "")): selector.EntitySelector(
+                vol.Required(CONF_VALUE_SENSOR, default=current_data.get(CONF_VALUE_SENSOR, "")): selector.EntitySelector(
                     selector.EntitySelectorConfig(domain="sensor")
                 ),
-                vol.Required(CONF_PRICE_TYPE, default=data.get(CONF_PRICE_TYPE, PRICE_TYPE_FIXED)): selector.SelectSelector(
+                vol.Required(CONF_PRICE_TYPE, default=current_data.get(CONF_PRICE_TYPE, PRICE_TYPE_FIXED)): selector.SelectSelector(
                     selector.SelectSelectorConfig(
                         options=[PRICE_TYPE_FIXED, PRICE_TYPE_SENSOR],
                         mode=selector.SelectSelectorMode.LIST
                     )
                 ),
-                vol.Optional(CONF_FIXED_PRICE, default=data.get(CONF_FIXED_PRICE, 0.0)): vol.Coerce(float),
-                vol.Optional(CONF_PRICE_SENSOR, default=data.get(CONF_PRICE_SENSOR, "")): selector.EntitySelector(
+                vol.Optional(CONF_FIXED_PRICE, default=current_data.get(CONF_FIXED_PRICE, 0.0)): vol.Coerce(float),
+                vol.Optional(CONF_PRICE_SENSOR, default=current_data.get(CONF_PRICE_SENSOR, "")): selector.EntitySelector(
                     selector.EntitySelectorConfig(domain="sensor")
                 ),
             }),
