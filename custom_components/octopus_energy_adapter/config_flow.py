@@ -117,33 +117,47 @@ class OctopusOptionsFlowHandler(config_entries.OptionsFlow):
                 errors["base"] = "missing_price_sensor"
 
             if not errors:
-                # Aggiorniamo i DATI della config entry (non le opzioni separate)
-                # NOTA: async_update_entry ricaricherà l'integrazione automaticamente
+                # Se è fisso, assicuriamoci che il sensore prezzo sia rimosso
+                if price_type == PRICE_TYPE_FIXED:
+                    user_input[CONF_PRICE_SENSOR] = None
+                
                 self.hass.config_entries.async_update_entry(config_entry, data=user_input)
                 return self.async_create_entry(title="", data=user_input)
 
         # Recuperiamo i dati attuali dai dati della entry
         current_data = config_entry.data
-        
+
+        # --- COSTRUZIONE DINAMICA DELLO SCHEMA ---
+        # Definiamo i campi base
+        schema_dict = {
+            vol.Required(CONF_DATA_SENSOR, default=current_data.get(CONF_DATA_SENSOR)): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="sensor")
+            ),
+            vol.Required(CONF_VALUE_SENSOR, default=current_data.get(CONF_VALUE_SENSOR)): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="sensor")
+            ),
+            vol.Required(CONF_PRICE_TYPE, default=current_data.get(CONF_PRICE_TYPE, PRICE_TYPE_FIXED)): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=[PRICE_TYPE_FIXED, PRICE_TYPE_SENSOR],
+                    mode=selector.SelectSelectorMode.LIST
+                )
+            ),
+            vol.Optional(CONF_FIXED_PRICE, default=current_data.get(CONF_FIXED_PRICE, 0.0)): vol.Coerce(float),
+        }
+
+        # Per il sensore di prezzo, aggiungiamo il default SOLO SE esiste ed è valido
+        price_sensor_current = current_data.get(CONF_PRICE_SENSOR)
+        if price_sensor_current and price_sensor_current not in [None, ""]:
+            schema_dict[vol.Optional(CONF_PRICE_SENSOR, default=price_sensor_current)] = selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="sensor")
+            )
+        else:
+            schema_dict[vol.Optional(CONF_PRICE_SENSOR)] = selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="sensor")
+            )
+
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema({
-                vol.Required(CONF_DATA_SENSOR, default=current_data.get(CONF_DATA_SENSOR, "")): selector.EntitySelector(
-                    selector.EntitySelectorConfig(domain="sensor")
-                ),
-                vol.Required(CONF_VALUE_SENSOR, default=current_data.get(CONF_VALUE_SENSOR, "")): selector.EntitySelector(
-                    selector.EntitySelectorConfig(domain="sensor")
-                ),
-                vol.Required(CONF_PRICE_TYPE, default=current_data.get(CONF_PRICE_TYPE, PRICE_TYPE_FIXED)): selector.SelectSelector(
-                    selector.SelectSelectorConfig(
-                        options=[PRICE_TYPE_FIXED, PRICE_TYPE_SENSOR],
-                        mode=selector.SelectSelectorMode.LIST
-                    )
-                ),
-                vol.Optional(CONF_FIXED_PRICE, default=current_data.get(CONF_FIXED_PRICE, 0.0)): vol.Coerce(float),
-                vol.Optional(CONF_PRICE_SENSOR, default=current_data.get(CONF_PRICE_SENSOR, "")): selector.EntitySelector(
-                    selector.EntitySelectorConfig(domain="sensor")
-                ),
-            }),
+            data_schema=vol.Schema(schema_dict),
             errors=errors
         )
